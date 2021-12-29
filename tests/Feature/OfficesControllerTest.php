@@ -112,4 +112,32 @@ class OfficesControllerTest extends TestCase
         $this->assertEquals(1,$response->json('data')[0]['reservations_count']);
         
     }
+
+    /** @test */
+    public function can_create_an_office()
+    {
+        $user = User::factory()->createQuietly();
+        $tag = Tag::factory()->create();
+        $tag1 = Tag::factory()->create();
+
+
+        $this->actingAs($user);
+
+        $response = $this->post('/api/offices',[
+            'title' => 'This is a title',
+            'description' => 'This is a description',
+            'lat' => '39.54646464568',
+            'lng' => '-8.18456465465',
+            'address_line1' => 'address',
+            'price_per_day' => 10_000,
+            'monthly_discount' => 65,
+            'tags' => [
+                $tag->id, $tag1->id
+            ]
+        ]);
+
+        $response->assertCreated()
+            ->assertJsonPath('data.title','This is a title');
+    }
+    
 }
