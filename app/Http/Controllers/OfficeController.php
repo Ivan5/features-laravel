@@ -10,6 +10,7 @@ use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Http\Resources\Json\JsonResource;
 use Illuminate\Support\Arr;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 
 class OfficeController extends Controller
@@ -63,10 +64,16 @@ class OfficeController extends Controller
         $data['user_id'] = auth()->id();
         $data['approval_status'] = Office::APPROVAL_PENDING;
 
-        $office = Office::create(Arr::except($data, ['tags']));
+        $office = DB::transaction(function () use ($data) {
+            $office = Office::create(Arr::except($data, ['tags']));
 
-        $office->tags()->sync($data['tags']);
+            $office->tags()->sync($data['tags']);
 
-        return OfficeResource::make($office);
+            return $office;
+        });
+
+        return OfficeResource::make(
+            $office->load(['images','tags','user'])
+        );
     }
 }
