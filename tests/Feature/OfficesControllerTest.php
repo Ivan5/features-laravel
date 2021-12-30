@@ -7,10 +7,12 @@ use App\Models\Office;
 use App\Models\Reservation;
 use App\Models\Tag;
 use App\Models\User;
+use App\Notifications\OfficePendingApproval;
 use Database\Factories\OfficeFactory;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Foundation\Testing\WithFaker;
+use Illuminate\Support\Facades\Notification;
 use Tests\TestCase;
 
 class OfficesControllerTest extends TestCase
@@ -139,5 +141,84 @@ class OfficesControllerTest extends TestCase
         $response->assertCreated()
             ->assertJsonPath('data.title','This is a title');
     }
+
+    /** @test */
+    public function can_update_an_office()
+    {
+        $user = User::factory()->createQuietly();
+        $tag = Tag::factory()->create();
+        $tag1 = Tag::factory()->create();
+
+        $office = Office::factory()->for($user)->create();
+
+        $office->tags()->attach($tag);
+
+
+        $this->actingAs($user);
+
+        $response = $this->put('/api/offices/'.$office->id,[
+            'title' => 'Main Office',
+        ]);
+
+        $response->assertOk()
+            ->assertJsonPath('data.title','Main Office');
+    }
+
+    
+    /** @test */
+    public function dosent_update_office_that_dosent_belongs_to_user()
+    {
+        $user = User::factory()->create();
+        $otherUser = User::factory()->create();
+        $tag = Tag::factory()->create();
+        $tag1 = Tag::factory()->create();
+
+        $office = Office::factory()->for($otherUser)->create();
+
+        $office->tags()->attach($tag);
+
+
+        $this->actingAs($user);
+
+        $response = $this->put('/api/offices/'.$office->id,[
+            'title' => 'Main Office',
+        ]);
+
+        $response->assertStatus(403);
+    }
+
+    /** @test */
+    public function marks_the_office_as_pending_if_dirty()
+    {
+        $admin = User::factory()->create(['name' => 'Ivan']);
+
+        Notification::fake();
+
+        $user = User::factory()->create();
+        $tag = Tag::factory()->create();
+        $tag1 = Tag::factory()->create();
+
+        $office = Office::factory()->for($user)->create();
+
+        $office->tags()->attach($tag);
+
+
+        $this->actingAs($user);
+
+        $response = $this->put('/api/offices/'.$office->id,[
+            'lat' => '19.3456446848678',
+        ]);
+
+        $response->assertOk();
+
+        $this->assertDatabaseHas('offices',[
+            'id' => $office->id,
+            'approval_status' => Office::APPROVAL_PENDING,
+        ]);
+
+        Notification::assertSentTo($admin, OfficePendingApproval::class);
+    }
+
+
     
 }
