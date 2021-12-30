@@ -5,12 +5,17 @@ namespace App\Http\Controllers;
 use App\Http\Resources\OfficeResource;
 use App\Models\Office;
 use App\Models\Reservation;
+use App\Models\User;
+use App\Models\Validators\OfficeValidator;
+use App\Notifications\OfficePendingApproval;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Http\Resources\Json\JsonResource;
+use Illuminate\Http\Response;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Notification;
 use Illuminate\Validation\Rule;
 
 class OfficeController extends Controller
@@ -44,33 +49,51 @@ class OfficeController extends Controller
             abort(403);
         }
 
-        $data = validator(
-            request()->all(),
-            [
-                'title' => ['string','required'],
-                'description' => ['string','required'],
-                'lat' => ['required', 'numeric'],
-                'lng' => ['required', 'numeric'],
-                'address_line1' => ['required', 'string'],
-                'hidden' => ['bool'],
-                'price_per_day' => ['required','integer','min:100'],
-                'monthly_discount' => ['integer','min:0'],
-
-                'tag' => ['array'],
-                'tags.*' => ['integer', Rule::exists('tags','id')]
-            ]
-        )->validate();
+        $data = (new OfficeValidator())->validate($office = new Office(), request()->all());
 
         $data['user_id'] = auth()->id();
         $data['approval_status'] = Office::APPROVAL_PENDING;
 
-        $office = DB::transaction(function () use ($data) {
-            $office = Office::create(Arr::except($data, ['tags']));
+        $office = DB::transaction(function () use ($office,$data) {
+            $office->fill(Arr::except($data, ['tags']))->save();
 
             $office->tags()->sync($data['tags']);
 
             return $office;
         });
+
+        return OfficeResource::make(
+            $office->load(['images','tags','user'])
+        );
+    }
+
+    public function update(Office $office): JsonResource
+    {   
+        abort_unless(auth()->user()->tokenCan('office.update'), Response::HTTP_FORBIDDEN);
+
+        $this->authorize('update', $office);
+
+        $data = (new OfficeValidator())->validate($office, request()->all());
+
+        $office->fill(Arr::except($data, ['tags']));
+
+        if($requiresReview = $office->isDirty(['lat','lng','price_per_day'])) {
+            $office->fill(['approval_status' => Office::APPROVAL_PENDING]);
+        }
+
+        DB::transaction(function () use ($office, $data) {
+            $office->save();
+
+            if(isset($data['tags'])) {
+                $office->tags()->sync($data['tags']);
+            }
+        });
+
+        if($requiresReview)
+        {
+            Notification::send(User::firstWhere('name','Ivan'), new OfficePendingApproval($office));
+        }
+
 
         return OfficeResource::make(
             $office->load(['images','tags','user'])
