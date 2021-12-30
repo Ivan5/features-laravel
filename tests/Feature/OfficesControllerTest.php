@@ -219,6 +219,47 @@ class OfficesControllerTest extends TestCase
         Notification::assertSentTo($admin, OfficePendingApproval::class);
     }
 
+    /** @test */
+    public function can_delete_offices()
+    {
+        $user = User::factory()->create();
+        $tag = Tag::factory()->create();
+        $tag1 = Tag::factory()->create();
 
-    
+        $office = Office::factory()->for($user)->create();
+
+        $office->tags()->attach($tag);
+
+
+        $this->actingAs($user);
+
+        $response = $this->delete('/api/offices/'.$office->id);
+
+        $response->assertOk();
+
+        $this->assertSoftDeleted($office);
+    }
+
+    /** @test */
+    public function can_not_delete_an_offices()
+    {
+        $user = User::factory()->create();
+        $tag = Tag::factory()->create();
+        $tag1 = Tag::factory()->create();
+
+        $office = Office::factory()->for($user)->create();
+
+        Reservation::factory(3)->for($office)->create();
+
+        $office->tags()->attach($tag);
+
+
+        $this->actingAs($user);
+
+        $response = $this->delete('/api/offices/'.$office->id);
+
+        $response->assertStatus(302);
+
+        $this->assertModelExists($office);
+    }
 }
