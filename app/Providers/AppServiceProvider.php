@@ -16,7 +16,7 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register()
     {
-        //
+        
     }
 
     /**
@@ -29,7 +29,7 @@ class AppServiceProvider extends ServiceProvider
         Model::unguard();
 
         Relation::enforceMorphMap([
-            'office' => Office::class
+            'office' => Office::class,
         ]);
     }
 }

@@ -10,8 +10,8 @@ class Reservation extends Model
 {
     use HasFactory;
 
-    const STATUS_ACTIVE = 1;
-    const STATUS_CANCEL = 2;
+    public const STATUS_ACTIVE = 1;
+    public const STATUS_CANCEL = 2;
 
     public $casts = [
         'price' => 'integer',
@@ -20,12 +20,10 @@ class Reservation extends Model
         'end_date' => 'immutable_date',
     ];
 
-
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
     }
-
 
     public function office(): BelongsTo
     {

@@ -70,7 +70,7 @@ class OfficesControllerTest extends TestCase
 
         
         $response->assertOk();
-        $response->assertJsonCount(5, 'data');
+        $response->assertJsonCount(3, 'data');
     }
 
     /** @test */

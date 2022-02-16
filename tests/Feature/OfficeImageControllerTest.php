@@ -10,7 +10,7 @@ uses(DatabaseTransactions::class);
 
 it('can store a images for office', function(){
 
-    Storage::fake('public');
+    Storage::fake();
 
     $user = User::factory()->create();
     $office = Office::factory()->for($user)->create();
@@ -23,13 +23,13 @@ it('can store a images for office', function(){
 
     $response->assertCreated();
 
-    Storage::disk('public')->assertExists(
+    Storage::assertExists(
         $response->json('data.path')
     );
 });
 
 it('can detele a image', function() {
-    Storage::fake('public')->put('/office_image.jpg', 'empty');
+    Storage::put('/office_image.jpg', 'empty');
 
     $user = User::factory()->create();
     $office = Office::factory()->for($user)->create();
@@ -48,7 +48,7 @@ it('can detele a image', function() {
 
     $this->assertModelMissing($image);
 
-    Storage::disk('public')->assertMissing('office_image.jpg');
+    Storage::assertMissing('office_image.jpg');
 
 });
 

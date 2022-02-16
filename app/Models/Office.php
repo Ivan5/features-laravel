@@ -15,8 +15,8 @@ class Office extends Model
 {
     use HasFactory, SoftDeletes;
 
-    const APPROVAL_PENDING = 1;
-    const APPROVAL_APPROVED = 2;
+    public const APPROVAL_PENDING = 1;
+    public const APPROVAL_APPROVED = 2;
 
     public $casts = [
         'lat' => 'decimal:8',
@@ -24,7 +24,7 @@ class Office extends Model
         'approval_status' => 'integer',
         'hidden' => 'boolean',
         'price_per_day' => 'integer',
-        'monthly_discount' => 'integer'
+        'monthly_discount' => 'integer',
     ];
 
     public function user(): BelongsTo
