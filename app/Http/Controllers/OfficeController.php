@@ -26,8 +26,11 @@ class OfficeController extends Controller
         $offices = Office::query()
             ->with(['images','tags','user'])
             ->withCount(['reservations' => fn ($builder) => $builder->where('status', Reservation::STATUS_ACTIVE)])
-            ->where('approval_status', Office::APPROVAL_APPROVED)
-            ->where('hidden', false)
+            ->when(request('user_id') && auth()->user() && request('user_id') == auth()->id(),
+                fn($builder) => $builder,
+                fn($builder) => $builder->where('approval_status', Office::APPROVAL_APPROVED)
+                ->where('hidden', false)
+            )
             ->when(request('user_id'), fn ($builder) => $builder->whereUserId(request('user_id')))
             ->when(request('visitor_id'), fn (Builder $builder) => $builder->whereRelation('reservations', 'user_id', '=', request('visitor_id')))
             ->when(request('lat') && request('lng'), fn($builder) => $builder->nearestTo(request('lat'), request('lng')), fn($builder) => $builder->orderBy('id', 'ASC'))
@@ -58,10 +61,14 @@ class OfficeController extends Controller
         $office = DB::transaction(function () use ($office,$data) {
             $office->fill(Arr::except($data, ['tags']))->save();
 
-            $office->tags()->sync($data['tags']);
+            if(isset($attributes['tags'])){
+                $office->tags()->sync($data['tags']);
+            }
 
             return $office;
         });
+
+        Notification::send(User::where('is_admin',true)->get(), new OfficePendingApproval($office));
 
         return OfficeResource::make(
             $office->load(['images','tags','user'])
@@ -92,7 +99,7 @@ class OfficeController extends Controller
 
         if($requiresReview)
         {
-            Notification::send(User::firstWhere('name','Ivan'), new OfficePendingApproval($office));
+            Notification::send(User::where('is_admin',true)->get(), new OfficePendingApproval($office));
         }
 
 
