@@ -185,6 +185,52 @@ class OfficesControllerTest extends TestCase
             ->assertJsonPath('data.title','Main Office');
     }
 
+    /** @test */
+    public function can_updated_the_featured_image_of_an_office()
+    {
+        $user = User::factory()->createQuietly();
+
+        $office = Office::factory()->for($user)->create();
+
+        $image = $office->images()->create([
+            'path' => 'image.jpg'
+        ]);
+
+
+        $this->actingAs($user);
+
+        $response = $this->putJson('/api/offices/'.$office->id,[
+            'featured_image_id' => $image->id,
+        ]);
+
+        $response->assertOk();
+
+        $response->assertJsonPath('data.featured_image_id',$image->id);
+    }
+
+    /** @test */
+    public function dosent_update_featured_image_that_belongs_to_another_office()
+    {
+        $user = User::factory()->createQuietly();
+
+        $office = Office::factory()->for($user)->create();
+        $office2 = Office::factory()->for($user)->create();
+
+        $image = $office2->images()->create([
+            'path' => 'image.jpg'
+        ]);
+
+
+        $this->actingAs($user);
+
+        $response = $this->putJson('/api/offices/'.$office->id,[
+            'featured_image_id' => $image->id,
+        ]);
+
+        $response->assertUnprocessable()->assertInvalid('featured_image_id');
+
+    }
+
     
     /** @test */
     public function dosent_update_office_that_dosent_belongs_to_user()
