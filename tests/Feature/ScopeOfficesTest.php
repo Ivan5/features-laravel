@@ -4,7 +4,8 @@ use App\Models\Office;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
 
 //uses(Tests\TestCase::class);
-uses(DatabaseTransactions::class);
+//uses(DatabaseTransactions::class);
+uses(\Illuminate\Foundation\Testing\LazilyRefreshDatabase::class);
 
 it('orders by distance when coordinates are provided', function () {
 
@@ -13,7 +14,7 @@ it('orders by distance when coordinates are provided', function () {
         'lng' => '13.779026647679379',
         'title' => 'Trieste'
     ]);
-    
+
     $office2 = Office::factory()->create([
         'lat' => '45.55693195587672',
         'lng' => '11.53683638978917',
@@ -34,7 +35,7 @@ it('no orders by distance when coordinates are not provided', function() {
         'lng' => '13.779026647679379',
         'title' => 'Trieste'
     ]);
-    
+
     $office2 = Office::factory()->create([
         'lat' => '45.55693195587672',
         'lng' => '11.53683638978917',

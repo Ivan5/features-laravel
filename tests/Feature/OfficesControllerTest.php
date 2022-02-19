@@ -10,16 +10,19 @@ use App\Models\User;
 use App\Notifications\OfficePendingApproval;
 use Database\Factories\OfficeFactory;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
+use Illuminate\Foundation\Testing\LazilyRefreshDatabase;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Foundation\Testing\WithFaker;
 use Illuminate\Support\Facades\Notification;
+use Laravel\Sanctum\Sanctum;
 use Tests\TestCase;
 
 class OfficesControllerTest extends TestCase
 {
 
     //use RefreshDatabase;
-    use DatabaseTransactions;
+    //use DatabaseTransactions;
+    use LazilyRefreshDatabase;
     /** @test
      */
     public function can_take_office()
@@ -47,7 +50,7 @@ class OfficesControllerTest extends TestCase
 
         $response = $this->get('/api/offices');
 
-        
+
         $response->assertOk();
         $response->assertJsonCount(3, 'data');
     }
@@ -68,7 +71,7 @@ class OfficesControllerTest extends TestCase
 
         $response = $this->get('/api/offices?user_id='.$user->id);
 
-        
+
         $response->assertOk();
         $response->assertJsonCount(3, 'data');
     }
@@ -133,7 +136,7 @@ class OfficesControllerTest extends TestCase
 
         $response->assertOk();
         $this->assertEquals(1,$response->json('data')[0]['reservations_count']);
-        
+
     }
 
     /** @test */
@@ -144,7 +147,7 @@ class OfficesControllerTest extends TestCase
         $tag1 = Tag::factory()->create();
 
 
-        $this->actingAs($user);
+        Sanctum::actingAs($user, ['*']);
 
         $response = $this->post('/api/offices',[
             'title' => 'This is a title',
@@ -175,7 +178,7 @@ class OfficesControllerTest extends TestCase
         $office->tags()->attach($tag);
 
 
-        $this->actingAs($user);
+        Sanctum::actingAs($user, ['*']);
 
         $response = $this->put('/api/offices/'.$office->id,[
             'title' => 'Main Office',
@@ -197,7 +200,7 @@ class OfficesControllerTest extends TestCase
         ]);
 
 
-        $this->actingAs($user);
+        Sanctum::actingAs($user, ['*']);
 
         $response = $this->putJson('/api/offices/'.$office->id,[
             'featured_image_id' => $image->id,
@@ -221,7 +224,7 @@ class OfficesControllerTest extends TestCase
         ]);
 
 
-        $this->actingAs($user);
+        Sanctum::actingAs($user, ['*']);
 
         $response = $this->putJson('/api/offices/'.$office->id,[
             'featured_image_id' => $image->id,
@@ -231,7 +234,7 @@ class OfficesControllerTest extends TestCase
 
     }
 
-    
+
     /** @test */
     public function dosent_update_office_that_dosent_belongs_to_user()
     {
@@ -245,7 +248,7 @@ class OfficesControllerTest extends TestCase
         $office->tags()->attach($tag);
 
 
-        $this->actingAs($user);
+        Sanctum::actingAs($user, ['*']);
 
         $response = $this->put('/api/offices/'.$office->id,[
             'title' => 'Main Office',
@@ -270,7 +273,7 @@ class OfficesControllerTest extends TestCase
         $office->tags()->attach($tag);
 
 
-        $this->actingAs($user);
+        Sanctum::actingAs($user, ['*']);
 
         $response = $this->put('/api/offices/'.$office->id,[
             'lat' => '19.3456446848678',
@@ -298,7 +301,7 @@ class OfficesControllerTest extends TestCase
         $office->tags()->attach($tag);
 
 
-        $this->actingAs($user);
+        Sanctum::actingAs($user, ['*']);
 
         $response = $this->delete('/api/offices/'.$office->id);
 
@@ -321,7 +324,7 @@ class OfficesControllerTest extends TestCase
         $office->tags()->attach($tag);
 
 
-        $this->actingAs($user);
+        Sanctum::actingAs($user, ['*']);
 
         $response = $this->delete('/api/offices/'.$office->id);
 
