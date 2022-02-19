@@ -5,8 +5,10 @@ use App\Models\User;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
+use Laravel\Sanctum\Sanctum;
 
-uses(DatabaseTransactions::class);
+//uses(DatabaseTransactions::class);
+uses(\Illuminate\Foundation\Testing\LazilyRefreshDatabase::class);
 
 it('can store a images for office', function(){
 
@@ -15,7 +17,7 @@ it('can store a images for office', function(){
     $user = User::factory()->create();
     $office = Office::factory()->for($user)->create();
 
-    $this->actingAs($user);
+    Sanctum::actingAs($user, ['*']);
 
     $response = $this->post('/api/offices/'.$office->id.'/images', [
         'image' => UploadedFile::fake()->image('image.jpg')
@@ -42,7 +44,7 @@ it('can detele a image', function() {
         'path' => 'office_image.jpg'
     ]);
 
-    $this->actingAs($user);
+    Sanctum::actingAs($user, ['*']);
 
     $response = $this->delete("/api/offices/{$office->id}/images/{$image->id}");
 
@@ -60,7 +62,7 @@ it('dosent delete the only image', function() {
         'path' => 'office_image.jpg'
     ]);
 
-    $this->actingAs($user);
+    Sanctum::actingAs($user, ['*']);
 
     $response = $this->deleteJson("/api/offices/{$office->id}/images/{$image->id}");
 
@@ -78,7 +80,7 @@ it('dosent delete the featured image', function() {
 
     $office->update(['featured_image_id' => $image->id]);
 
-    $this->actingAs($user);
+    Sanctum::actingAs($user, ['*']);
 
     $response = $this->deleteJson("/api/offices/{$office->id}/images/{$image->id}");
 
