@@ -58,7 +58,7 @@ it('list reservation filter by date rage', function() {
         'end_date' => '2021-05-01'
     ]);
 
-    DB::enableQueryLog();
+
     $this->actingAs($user);
 
     $response = $this->getJson('/api/reservations?'.http_build_query([
