@@ -107,3 +107,37 @@ it('filter results by office' , function(){
     $response->assertJsonCount(1, 'data')
         ->assertJsonPath('data.0.id', $reservation->id);
 });
+
+it('makes reservations', function() {
+    $user = User::factory()->create();
+
+    $office = Office::factory()->create([
+        'price_per_day' => 1_00,
+        'monthly_discount' => 10
+    ]);
+
+    $this->actingAs($user);
+
+    $response = $this->postJson('/api/reservations', [
+        'office_id' => $office->id,
+        'start_date' => now()->addDay(),
+        'end_date' => now()->addDays(40)
+    ]);
+
+    $response->assertCreated();
+    $response->assertJsonPath('data.price', 3600)
+        ->assertJsonPath('data.status', Reservation::STATUS_ACTIVE);
+});
+
+it('can not make reservation of non existing office', function() {
+    $user = User::factory()->create();
+    $this->actingAs($user);
+
+    $response = $this->postJson('/api/reservations', [
+        'office_id' => 87,
+        'start_date' => now()->addDay(),
+        'end_date' => now()->addDays(41)
+    ]);
+
+    $response->assertUnprocessable();
+});
