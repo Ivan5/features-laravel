@@ -118,4 +118,25 @@ class UserReservationController extends Controller
             $reservation->load('office')
         );
     }
+
+    public function cancel(Reservation $reservation)
+    {
+        abort_unless(auth()->user()->tokenCan('reservation.cancel'), Response::HTTP_FORBIDDEN);
+
+        if ($reservation->user_id != auth()->id() ||
+            $reservation->status != Reservation::STATUS_ACTIVE ||
+            $reservation->start_date < now()->toDateString()) {
+            throw ValidationException::withMessages([
+                'reservation' => 'You can not cabcel this reservation'
+            ]);
+        }
+
+        $reservation->update([
+            'status' => Reservation::STATUS_CANCEL
+        ]);
+
+        return ReservationResource::make(
+            $reservation->load('office')
+        );
+    }
 }
